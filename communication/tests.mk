@@ -1,8 +1,7 @@
 CXX ?= g++
-CXXFLAGS ?= -g -Wall -W -Winline -ansi -std=c++11
-CXXFLAGS += -I../hal/shared -I../services/inc -Ilib/tropicssl/include -Isrc -Itests/UnitTest++/src
+CXXFLAGS ?= -g -Wall -W -Winline -ansi
+CXXFLAGS += -Ilib/tropicssl/include -Isrc -Itests/UnitTest++/src
 RM = rm
-CXXFLAGS += -DPLATFORM_ID=3
 
 .SUFFIXES: .o .cpp
 
@@ -16,13 +15,11 @@ testrunner  = tests/Main.cpp
 ssllibdir   = lib/tropicssl/library
 ssllib      = $(ssllibdir)/libtropicssl.a
 
-objects = \
-        src/coap.o \
-        src/dsakeygen.o \
-        src/events.o \
-        src/handshake.o \
-        src/spark_protocol.o \
-        src/spark_protocol_functions.o
+objects = src/handshake.o \
+          src/coap.o \
+          src/spark_protocol.o \
+          src/events.o \
+          src/functions.o
 
 testobjects = tests/ConstructorFixture.o \
               tests/TestHandshake.o \

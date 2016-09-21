@@ -55,16 +55,11 @@ struct ActiveObjectConfiguration
      */
     unsigned put_wait;
 
-    /**
-     * The message capacity of the queue.
-     */
-    uint16_t queue_size;
 
 public:
     ActiveObjectConfiguration(background_task_t task, unsigned take_wait_, unsigned put_wait_,
-    			uint16_t queue_size_,
             size_t stack_size_ =0) : background_task(task), stack_size(stack_size_),
-            take_wait(take_wait_), put_wait(put_wait_), queue_size(queue_size_) {}
+            take_wait(take_wait_), put_wait(put_wait_) {}
 
 };
 
@@ -193,7 +188,7 @@ template<typename T> class Promise : public AbstractPromise<T, Promise<T>>
 public:
 
     Promise(const std::function<T()>& fn_) : super(fn_) {}
-    virtual ~Promise() = default;
+    virtual ~Promise() {}
 
     /**
      * wait for the result
@@ -221,7 +216,7 @@ template<> class Promise<void> : public AbstractPromise<void, Promise<void>>
 public:
 
     Promise(const std::function<void()>& fn_) : super(fn_) {}
-    virtual ~Promise() = default;
+    virtual ~Promise() {}
 
     void get()
     {
@@ -255,12 +250,13 @@ protected:
      */
     void run();
 
-protected:
+    //void invoke_impl(void* fn, void* data, size_t len=0);
 
+protected:
 
     // todo - concurrent queue should be a strategy so it's pluggable without requiring inheritance
     virtual bool take(Item& item)=0;
-    virtual bool put(Item& item)=0;
+    virtual void put(Item& item)=0;
 
     void set_thread(std::thread&& thread)
     {
@@ -280,8 +276,6 @@ public:
 
     ActiveObjectBase(const ActiveObjectConfiguration& config) : configuration(config), started(false) {}
 
-    bool process();
-
     bool isCurrentThread() {
         return _thread_id == std::this_thread::get_id();
     }
@@ -297,26 +291,15 @@ public:
     template<typename R> void invoke_async(const std::function<R(void)>& work)
     {
         auto task = new AsyncTask<R>(work);
-        if (task)
-        {
-			Item message = task;
-			if (!put(message))
-				delete task;
-        }
-	}
+        Item message = task;
+        put(message);
+    }
 
     template<typename R> Promise<R>* invoke_future(const std::function<R(void)>& work)
     {
         auto promise = new Promise<R>(work);
-        if (promise)
-        {
-			Item message = promise;
-			if (!put(message))
-			{
-				delete promise;
-				promise = nullptr;
-			}
-        }
+        Item message = promise;
+        put(message);
         return promise;
     }
 
@@ -335,10 +318,9 @@ protected:
         return cpp::select().recv_only(_channel, item).try_once();
     }
 
-    virtual bool put(const Item& item) override
+    virtual void put(const Item& item) override
     {
         _channel.send(item);
-        return true;
     }
 
 
@@ -365,17 +347,17 @@ protected:
 
     virtual bool take(Item& result)
     {
-        return !os_queue_take(queue, &result, configuration.take_wait);
+        return os_queue_take(queue, &result, configuration.take_wait)==0;
     }
 
-    virtual bool put(Item& item)
+    virtual void put(Item& item)
     {
-    		return !os_queue_put(queue, &item, configuration.put_wait);
+        os_queue_put(queue, &item, configuration.put_wait);
     }
 
-    void createQueue()
+    void createQueue(int queue_size=50)
     {
-        os_queue_create(&queue, sizeof(Item), configuration.queue_size);
+        os_queue_create(&queue, sizeof(Item), queue_size);
     }
 
 public:
@@ -405,11 +387,6 @@ public:
         createQueue();
         setCurrentThread();
         run();
-    }
-
-    void process()
-    {
-        ActiveObjectQueue::process();
     }
 };
 

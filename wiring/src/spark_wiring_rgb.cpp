@@ -22,19 +22,23 @@
 #include "spark_wiring_rgb.h"
 #include "rgbled.h"
 
+bool RGBClass::_control = false;
+
 bool RGBClass::controlled(void)
 {
-    return LED_RGB_IsOverRidden();
+    return _control;
 }
 
 void RGBClass::control(bool override)
 {
-    if(override == controlled())
+    if(override == _control)
             return;
     else if (override)
             LED_Signaling_Start();
     else
             LED_Signaling_Stop();
+
+    _control = override;
 }
 
 void RGBClass::color(uint32_t rgb) {
@@ -43,7 +47,7 @@ void RGBClass::color(uint32_t rgb) {
 
 void RGBClass::color(int red, int green, int blue)
 {
-    if (!controlled())
+    if (true != _control)
             return;
 
     LED_SetSignalingColor(red << 16 | green << 8 | blue);
@@ -53,7 +57,7 @@ void RGBClass::color(int red, int green, int blue)
 void RGBClass::brightness(uint8_t brightness, bool update)
 {
     LED_SetBrightness(brightness);
-    if (controlled() && update)
+    if (_control && update)
         LED_On(LED_RGB);
 }
 

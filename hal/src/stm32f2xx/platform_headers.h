@@ -17,9 +17,6 @@ extern "C" {
 #include "hw_config.h"
 #include "pinmap_impl.h"
 #include "deepsleep_hal_impl.h"
-#if PLATFORM_ID == 10 // Electron
-#include "modem/enums_hal.h"
-#endif
 
 #ifdef	__cplusplus
 }

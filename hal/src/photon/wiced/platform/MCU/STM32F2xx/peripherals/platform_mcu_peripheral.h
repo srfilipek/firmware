@@ -51,7 +51,6 @@
 #include "stm32f2xx_syscfg.h"
 #include "stm32f2xx_tim.h"
 #include "stm32f2xx_usart.h"
-#include "stm32f2xx_can.h"
 #include "wwd_constants.h"
 #include "RTOS/wwd_rtos_interface.h"
 #include "ring_buffer.h"

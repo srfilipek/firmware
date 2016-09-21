@@ -16,7 +16,7 @@ VERBOSE_REDIRECT=
 else
 ECHO = true
 VERBOSE=@
-VERBOSE_REDIRECT= > /dev/null 2>&1
+VERBOSE_REDIRECT= &> /dev/null
 endif
 
 echo=@$(ECHO) $1

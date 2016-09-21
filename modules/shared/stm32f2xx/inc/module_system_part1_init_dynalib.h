@@ -31,10 +31,8 @@
  */
 
 DYNALIB_BEGIN(system_module_part1)
-
-DYNALIB_FN(0, system_module_part1, module_system_part1_pre_init, void*(void))
-DYNALIB_FN(1, system_module_part1, module_system_part1_init, void(void))
-
+DYNALIB_FN(system_module_part1, module_system_part1_pre_init)
+DYNALIB_FN(system_module_part1, module_system_part1_init)
 DYNALIB_END(system_module_part1)
 
 

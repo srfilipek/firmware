@@ -1,4 +1,4 @@
 
 #define DYNALIB_EXPORT
-#include "wwd_resources.h"
+#include "wiced_stubs.h"
 #include "wifi_dynalib.h"

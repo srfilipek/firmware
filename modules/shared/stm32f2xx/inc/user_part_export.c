@@ -4,7 +4,6 @@
 #include "system_user.h"
 #include <stddef.h>
 #include <string.h>
-#include "core_hal.h"
 
 
 extern char link_heap_start;
@@ -55,8 +54,6 @@ extern constructor_ptr_t link_constructors_end;
 
 void module_user_init()
 {
-    module_user_init_hook();
-
     // invoke constructors
     int ctor_num;
     for (ctor_num=0; ctor_num < link_constructors_size/sizeof(constructor_ptr_t); ctor_num++ )
@@ -74,7 +71,6 @@ void module_user_setup() {
 
 void module_user_loop() {
     loop();
-    _post_loop();
 }
 
 #include "user_dynalib.h"

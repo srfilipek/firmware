@@ -37,6 +37,7 @@
 /* Exported constants --------------------------------------------------------*/
 
 /* Exported macros -----------------------------------------------------------*/
+/* Internal Flash Page size = 1KByte */
 /* Exported functions --------------------------------------------------------*/
 
 #ifdef __cplusplus
@@ -45,14 +46,9 @@ extern "C" {
 
 
 void HAL_EEPROM_Init(void);
-uint8_t HAL_EEPROM_Read(uint32_t index);
-void HAL_EEPROM_Write(uint32_t index, uint8_t data);
-void HAL_EEPROM_Get(uint32_t index, void *data, size_t length);
-void HAL_EEPROM_Put(uint32_t index, const void *data, size_t length);
+uint8_t HAL_EEPROM_Read(uint32_t address);
+void HAL_EEPROM_Write(uint32_t address, uint8_t data);
 size_t HAL_EEPROM_Length();
-void HAL_EEPROM_Clear();
-bool HAL_EEPROM_Has_Pending_Erase();
-void HAL_EEPROM_Perform_Pending_Erase();
 
 #ifdef __cplusplus
 }

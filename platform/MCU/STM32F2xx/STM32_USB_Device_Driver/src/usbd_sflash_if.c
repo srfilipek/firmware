@@ -24,7 +24,6 @@ uint16_t sFLASH_If_Init(void);
 uint16_t sFLASH_If_Erase (uint32_t Add);
 uint16_t sFLASH_If_Write (uint32_t Add, uint32_t Len);
 const uint8_t *sFLASH_If_Read  (uint32_t Add, uint32_t Len);
-uint16_t sFLASH_If_Verify (uint32_t Add, uint32_t Len);
 uint16_t sFLASH_If_DeInit(void);
 uint16_t sFLASH_If_CheckAdd(uint32_t Add);
 
@@ -37,7 +36,6 @@ DFU_MAL_Prop_TypeDef DFU_sFlash_cb =
         sFLASH_If_Erase,
         sFLASH_If_Write,
         sFLASH_If_Read,
-        sFLASH_If_Verify,
         sFLASH_If_CheckAdd,
         50, /* Erase Time in ms */
         50  /* Programming Time in ms */
@@ -105,18 +103,6 @@ const uint8_t *sFLASH_If_Read (uint32_t Add, uint32_t Len)
 {
     sFLASH_ReadBuffer(MAL_Buffer, Add, (uint16_t)Len);
     return MAL_Buffer;
-}
-
-/**
- * @brief  sFLASH_If_Verify
- *         Memory verify routine.
- * @param  Add: Address to be verified to.
- * @param  Len: Number of data to be verified (in bytes).
- * @retval MAL_OK if operation is successeful, MAL_FAIL else.
- */
-uint16_t sFLASH_If_Verify(uint32_t Add, uint32_t Len)
-{
-    return MAL_OK; /* unimplemented, todo */
 }
 
 /**

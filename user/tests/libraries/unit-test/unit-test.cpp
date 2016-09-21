@@ -227,28 +227,22 @@ Test::~Test()
   remove();
 }
 
-unsigned Test::include(const char *pattern)
+void Test::include(const char *pattern)
 {
-  unsigned count = 0;
   for (Test *p = root; p != 0; p=p->next) {
     if (p->state == DONE_SKIP && p->name.matches(pattern)) {
       p->state = UNSETUP;
-      count++;
     }
   }
-  return count;
 }
 
-unsigned Test::exclude(const char *pattern)
+void Test::exclude(const char *pattern)
 {
-	unsigned count = 0;
   for (Test *p = root; p != 0; p=p->next) {
     if (p->state == UNSETUP && p->name.matches(pattern)) {
       p->state = DONE_SKIP;
-      count++;
     }
   }
-  return count;
 }
 
 TestOnce::TestOnce(const char *name) : Test(name) {}

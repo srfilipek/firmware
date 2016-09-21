@@ -32,7 +32,6 @@
 #include "spi_hal.h"
 
 typedef void (*wiring_spi_dma_transfercomplete_callback_t)(void);
-typedef void (*wiring_spi_select_callback_t)(uint8_t);
 
 enum FrequencyScale
 {
@@ -61,7 +60,6 @@ public:
 
   void begin();
   void begin(uint16_t);
-  void begin(SPI_Mode mode, uint16_t);
   void end();
 
   void setBitOrder(uint8_t);
@@ -110,10 +108,6 @@ public:
   void detachInterrupt();
 
   bool isEnabled(void);
-
-  void onSelect(wiring_spi_select_callback_t user_callback);
-  void transferCancel();
-  int32_t available();
 };
 
 #ifndef SPARK_WIRING_NO_SPI
@@ -126,7 +120,6 @@ extern SPIClass SPI;
 #endif  // SPI1
 
 extern SPIClass SPI1;
-
 #endif  // Wiring_SPI1
 
 #if Wiring_SPI2
@@ -135,7 +128,6 @@ extern SPIClass SPI1;
 #endif  // SPI2
 
 extern SPIClass SPI2;
-
 #endif  // Wiring_SPI2
 
 #endif  // SPARK_WIRING_NO_SPI

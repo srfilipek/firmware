@@ -3,8 +3,7 @@
 
 //STARTUP(WiFi.selectAntenna(ANT_EXTERNAL));
 
-
-struct Stats {
+struct Stats : Printable {
 
     size_t size;
     size_t total;
@@ -12,7 +11,7 @@ struct Stats {
     size_t fail;
     time_t start_time;
 
-    size_t printTo(Print& p) const
+    virtual size_t printTo(Print& p) const
     {
         size_t result = p.print("total OTA: ");
         result += p.println(total);
@@ -72,7 +71,7 @@ void update_end(bool success)
     stats.save();
 }
 
-void system_event_handler(system_event_t events, int param, void* pointer)
+void system_event_handler(system_event_t events, uint32_t param, void* pointer)
 {
     if (events&firmware_update)
     {

@@ -21,12 +21,10 @@
 
 #include "system_network_internal.h"
 #include "wlan_hal.h"
-#include "interrupts_hal.h"
 
 
-class WiFiNetworkInterface : public ManagedIPNetworkInterface<WLanConfig, WiFiNetworkInterface>
+class WiFiNetworkInterface : public ManagedNetworkInterface
 {
-    WLanConfig ip_config;
 
     static int wifi_add_profile_callback(void* data, const char *ssid, const char *password,
         unsigned long security_type, unsigned long cipher, bool dry_run)
@@ -77,7 +75,6 @@ protected:
 
     virtual void on_start_listening() override
     {
-        notify_cannot_shutdown();
         /* If WiFi module is connected, disconnect it */
         network_disconnect(0, 0, NULL);
 
@@ -95,6 +92,11 @@ protected:
     void connect_init() override
     {
         wlan_connect_init();
+
+        if (wlan_reset_credentials_store_required())
+        {
+            wlan_reset_credentials_store();
+        }
 
         Set_NetApp_Timeout();
     }
@@ -130,10 +132,9 @@ public:
     }
 
 
-    void connect_cancel(bool cancel) override
+    void connect_cancel() override
     {
-        if (cancel)
-            wlan_connect_cancel(HAL_IsISR());
+        wlan_connect_cancel(true);
     }
 
     bool has_credentials() override
@@ -171,14 +172,9 @@ public:
     void setup() override
     {
         wlan_setup();
-
-        if (wlan_reset_credentials_store_required())
-        {
-            wlan_reset_credentials_store();
-        }
     }
 
-    void fetch_ipconfig(WLanConfig* target)
+    void fetch_ipconfig(WLanConfig* target) override
     {
         wlan_fetch_ipconfig(target);
     }

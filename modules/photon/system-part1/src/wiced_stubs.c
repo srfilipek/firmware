@@ -1,4 +1,4 @@
-#include "wwd_resources.h"
+#include "wiced_stubs.h"
 
 extern resource_hnd_t wifi_firmware_image;
 

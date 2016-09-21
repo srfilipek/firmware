@@ -654,9 +654,8 @@ INT32 wlan_add_profile(UINT32 ulSecType,
 			args = UINT32_TO_STREAM(args, 0x00000008 + ulSsidLen);
 			args = UINT32_TO_STREAM(args, ulPassPhraseLen);
 			ARRAY_TO_STREAM(args, ucSsid, ulSsidLen);
-			if (ucPf_OrKey!=NULL) {
-				ARRAY_TO_STREAM(args, ucPf_OrKey, ulPassPhraseLen);
-			}
+			ARRAY_TO_STREAM(args, ucPf_OrKey, ulPassPhraseLen);
+
 			arg_len = WLAN_ADD_PROFILE_WPA_PARAM_LEN + ulSsidLen + ulPassPhraseLen;
 		}
 

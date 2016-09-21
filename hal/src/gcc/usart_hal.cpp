@@ -7,7 +7,6 @@ struct Usart {
     virtual void begin(uint32_t baud)=0;
     virtual void end()=0;
     virtual int32_t available()=0;
-    virtual int32_t availableForWrite()=0;
     virtual int32_t read()=0;
     virtual int32_t peek()=0;
     virtual uint32_t write(uint8_t byte)=0;
@@ -68,42 +67,36 @@ class SocketUsartBase : public Usart
 
 
     public:
-        virtual void init(Ring_Buffer *rx_buffer, Ring_Buffer *tx_buffer) override
-        {
+        virtual void init(Ring_Buffer *rx_buffer, Ring_Buffer *tx_buffer) {
             this->rx = rx_buffer;
             this->tx = tx_buffer;
         }
 
-        virtual void end() override {
+        virtual void end() {
             socket_close(socket);
         }
-        virtual void flush() override {
+        virtual void flush() {
             // todo
         }
 
-        virtual int32_t available() override {
+        virtual int32_t available() {
             fillFromSocketIfNeeded();
             return (rx->head-rx->tail) % SERIAL_BUFFER_SIZE;
         }
-        virtual int32_t availableForWrite() override {
-            return (SERIAL_BUFFER_SIZE + tx->head - tx->tail) % SERIAL_BUFFER_SIZE;
-        }
-        virtual int32_t read() override {
+        virtual int32_t read() {
             fillFromSocketIfNeeded();
             return read_char();
         }
-        virtual int32_t peek() override {
+        virtual int32_t peek() {
             fillFromSocketIfNeeded();
             return read_char(true);
         }
-        virtual uint32_t write(uint8_t byte) override {
+        virtual uint32_t write(uint8_t byte) {
             if (!initSocket())
                 return 0;
             return socket_send(socket, &byte, 1);
         }
 };
-
-
 
 /**
  * Client that provides data to/from the server when connected.
@@ -161,21 +154,20 @@ class SocketUsartServer : public SocketUsartBase {
 };
 
 
-Usart& usartMap(unsigned index) {
 #if SPARK_TEST_DRIVER==1
-static SocketUsartServer usart1 = SocketUsartServer();
-static SocketUsartServer usart2 = SocketUsartServer();
+SocketUsartServer usart1 = SocketUsartServer();
+SocketUsartServer usart2 = SocketUsartServer();
 #else
-static SocketUsartClient usart1 = SocketUsartClient();
-static SocketUsartClient usart2 = SocketUsartClient();
+SocketUsartClient usart1 = SocketUsartClient();
+SocketUsartClient usart2 = SocketUsartClient();
 #endif
 
+Usart& usartMap(unsigned index) {
     switch (index) {
         case 0: return usart1;
         default: return usart2;
 
     }
-
 }
 
 void HAL_USART_Init(HAL_USART_Serial serial, Ring_Buffer *rx_buffer, Ring_Buffer *tx_buffer)
@@ -185,17 +177,12 @@ void HAL_USART_Init(HAL_USART_Serial serial, Ring_Buffer *rx_buffer, Ring_Buffer
 
 void HAL_USART_Begin(HAL_USART_Serial serial, uint32_t baud)
 {
-    //usartMap(serial).begin(baud);
+    usartMap(serial).begin(baud);
 }
 
 void HAL_USART_End(HAL_USART_Serial serial)
 {
-    //usartMap(serial).end();
-}
-
-int32_t HAL_USART_Available_Data_For_Write(HAL_USART_Serial serial)
-{
-    return usartMap(serial).availableForWrite();
+    usartMap(serial).end();
 }
 
 uint32_t HAL_USART_Write_Data(HAL_USART_Serial serial, uint8_t data)
@@ -230,13 +217,7 @@ bool HAL_USART_Is_Enabled(HAL_USART_Serial serial)
 
 void HAL_USART_Half_Duplex(HAL_USART_Serial serial, bool Enable)
 {
+    USART_HalfDuplexCmd(usartMap[serial]->usart_peripheral, Enable ? ENABLE : DISABLE);
 }
 
-void HAL_USART_BeginConfig(HAL_USART_Serial serial, uint32_t baud, uint32_t config, void *ptr)
-{
-}
 
-uint32_t HAL_USART_Write_NineBitData(HAL_USART_Serial serial, uint16_t data)
-{
-    return usartMap(serial).write((uint8_t) data);
-}

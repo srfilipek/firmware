@@ -13,7 +13,6 @@
 #include "delay_hal.h"
 #include "watchdog_hal.h"
 #include "interrupts_hal.h"
-#include "hal_platform.h"
 #include "core_hal.h"
 
 
@@ -88,7 +87,7 @@ void panic_(ePanicCode code, void* extraInfo, void (*HAL_Delay_Microseconds)(uin
             }
             // pause
             HAL_Delay_Microseconds(MS2u(800));
-#if defined(RELEASE_BUILD) || defined(PANIC_BUT_KEEP_CALM)
+#ifdef RELEASE_BUILD
             if (--loops == 0) HAL_Core_System_Reset();
 #endif
         }

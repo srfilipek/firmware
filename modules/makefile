@@ -21,10 +21,6 @@ $(call check_modular)
 
 projects = $(sort $(wildcard $(current_dir)/$(PLATFORM_DYNALIB_MODULES)/*))
 
-ifneq ("$(findstring system,$(MAKECMDGOALS))","")
-MAKECMDGOALS := $(subst system,,$(MAKECMDGOALS))
-export USER_PART=n
-endif
 
 # when building update-zero, enable minimum build since there is insufficient space
 ifneq ("$(findstring update-zero,$(MAKECMDGOALS))","")
@@ -37,18 +33,17 @@ else
 SUBDIR_GOALS := $(MAKECMDGOALS)
 endif
 
-INVOKEDGOALS := $(MAKECMDGOALS)
 MAKECMDGOALS := all
+
+$(info $(SUBDIR_GOALS))
 MODULE=combined
 
 # only consider projects containing a makefile
-ifeq ($(USER_PART),n)
-MODULE_EXCLUDE=user-part
-endif
-makefiles = $(foreach module,$(projects),$(and $(strip $(subst $(MODULE_EXCLUDE),,$(notdir $(module)))),$(wildcard $(module)/makefile)))
-$(info $(makefiles))
+makefiles = $(foreach module,$(projects),$(wildcard $(module)/makefile))
 
-all $(INVOKEDGOALS): make_deps
+all: make_deps
+
+clean program-dfu stflash: $(makefiles)
 
 UPDATE_ZERO = $(BUILD_PATH)/update-zero-$(VERSION_STRING)-p$(PLATFORM_ID).bin
 MODULAR_DIR=.
@@ -77,6 +72,7 @@ update-zero-validate:
 	$(call assert_filesize,$(UPDATE_ZERO),393216)
 
 
+# Build a combined file containing
 combined:
 
 combined-app:
@@ -85,6 +81,7 @@ $(makefiles):
 	$(call,echo,'Making module $@')
 	$(VERBOSE)$(MAKE) -C $(dir $@) $(SUBDIR_GOALS) $(MAKE_ARGS) $(MAKEOVERRIDES)
 
+
 make_deps: $(makefiles)
 
-.PHONY: system stflash program-dfu clean make_deps $(makefiles) update-zero
+.PHONY: stflash program-dfu clean make_deps $(makefiles) update-zero

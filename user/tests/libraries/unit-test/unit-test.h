@@ -594,7 +594,7 @@ class Test
 
   This should be done inside your setup() function.
   */
-  static unsigned include(const char *pattern);
+  static void include(const char *pattern);
 
   /**
 exclude (skip) currently included tests that match some
@@ -604,22 +604,7 @@ wildcard (*) pattern like,
 
 This should be done inside your setup() function.
   */
-static unsigned exclude(const char *pattern);
-
-
-/**
- * invoke a lambda for all tests
- */
-template <typename T> static void for_each(T& t) {
-	  for (Test *p = root; p != nullptr; p=p->next) {
-		  t(*p);
-	  }
-}
-
-bool is_enabled() { return this->state==UNSETUP; }
-
-TestString get_name() const { return name; }
-
+static void exclude(const char *pattern);
 
 /**
 

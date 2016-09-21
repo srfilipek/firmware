@@ -26,8 +26,6 @@
 #include "system_event.h"
 #include "system_cloud_internal.h"
 #include "system_network.h"
-#include "system_threading.h"
-#include "system_rgbled.h"
 
 
 enum eWanTimings
@@ -83,7 +81,7 @@ struct NetworkInterface
     virtual void connect(bool listen_enabled=true)=0;
     virtual bool connecting()=0;
     virtual bool connected()=0;
-    virtual void connect_cancel(bool cancel)=0;
+    virtual void connect_cancel()=0;
     /**
      * Force a manual disconnct.
      */
@@ -107,10 +105,10 @@ struct NetworkInterface
     virtual int set_credentials(NetworkCredentials* creds)=0;
 
     virtual void config_clear()=0;
-    virtual void update_config(bool force=false)=0;
+    virtual void update_config()=0;
     virtual void* config()=0;       // not really happy about lack of type
-
 };
+
 
 
 class ManagedNetworkInterface : public NetworkInterface
@@ -126,6 +124,8 @@ class ManagedNetworkInterface : public NetworkInterface
     volatile uint8_t WLAN_CAN_SHUTDOWN;
     volatile uint8_t WLAN_LISTEN_ON_FAILED_CONNECT;
 
+    WLanConfig ip_config;
+
 protected:
     volatile uint8_t WLAN_SERIAL_CONFIG_DONE;
 
@@ -139,11 +139,14 @@ protected:
         WLAN_SMART_CONFIG_FINISHED = 0;
         WLAN_SMART_CONFIG_STOP = 0;
         WLAN_SERIAL_CONFIG_DONE = 0;
+        WLAN_CONNECTED = 0;
+        WLAN_CONNECTING = 0;
+        WLAN_DHCP = 0;
+        WLAN_CAN_SHUTDOWN = 0;
 
         cloud_disconnect();
-        RGBLEDState led_state;
-        led_state.save();
         SPARK_LED_FADE = 0;
+        bool signaling = LED_RGB_IsOverRidden();
         LED_SetRGBColor(RGB_COLOR_BLUE);
         LED_Signaling_Stop();
         LED_On(LED_RGB);
@@ -152,7 +155,7 @@ protected:
 
         const uint32_t start = millis();
         uint32_t loop = start;
-        system_notify_event(wifi_listen_begin, 0);
+        system_notify_event(wifi_listen_begin, start);
 
         /* Wait for SmartConfig/SerialConfig to finish */
         while (network_listening(0, 0, NULL))
@@ -191,15 +194,11 @@ protected:
                 }
                 console.loop();
             }
-#if PLATFORM_THREADING
-            if (!APPLICATION_THREAD_CURRENT()) {
-                SystemThread.process();
-            }
-#endif
         }
 
         LED_On(LED_RGB);
-        led_state.restore();
+        if (signaling)
+            LED_Signaling_Start();
 
         WLAN_LISTEN_ON_FAILED_CONNECT = started && on_stop_listening();
 
@@ -208,9 +207,9 @@ protected:
         system_notify_event(wifi_listen_end, millis()-start);
 
         WLAN_SMART_CONFIG_START = 0;
-        if (has_credentials())
+        if (started)
             connect();
-        else if (!started)
+        else
             off();
     }
 
@@ -239,11 +238,11 @@ protected:
 
 public:
 
-    virtual void get_ipconfig(IPConfig* config)=0;
+    virtual void fetch_ipconfig(WLanConfig* target)=0;
 
     virtual void set_error_count(unsigned count)=0;
 
-    bool manual_disconnect() override
+    bool manual_disconnect()
     {
         return WLAN_DISCONNECT;
     }
@@ -276,10 +275,8 @@ public:
         return (WLAN_SMART_CONFIG_START && !(WLAN_SMART_CONFIG_FINISHED || WLAN_SERIAL_CONFIG_DONE));
     }
 
-
     void connect(bool listen_enabled=true) override
     {
-        INFO("ready():%s,connecting():%s,listening():%s",(ready())?"true":"false",(connecting())?"true":"false",(listening())?"true":"false");
         if (!ready() && !connecting() && !listening())
         {
             bool was_sleeping = SPARK_WLAN_SLEEP;
@@ -320,9 +317,6 @@ public:
         {
             WLAN_DISCONNECT = 1; //Do not ARM_WLAN_WD() in WLAN_Async_Callback()
             WLAN_CONNECTING = 0;
-            WLAN_CONNECTED = 0;
-            WLAN_DHCP = 0;
-
             cloud_disconnect();
             disconnect_now();
             config_clear();
@@ -359,20 +353,21 @@ public:
     {
         if (SPARK_WLAN_STARTED)
         {
+            config_clear();
+            cloud_disconnect();
             disconnect();
             off_now();
 
             SPARK_WLAN_SLEEP = 1;
 #if !SPARK_NO_CLOUD
             if (disconnect_cloud) {
-                spark_cloud_flag_disconnect();
+                spark_disconnect();
             }
 #endif
             SPARK_WLAN_STARTED = 0;
             WLAN_DHCP = 0;
             WLAN_CONNECTED = 0;
             WLAN_CONNECTING = 0;
-            WLAN_SERIAL_CONFIG_DONE = 1;
             SPARK_LED_FADE = 1;
             LED_SetRGBColor(RGB_COLOR_WHITE);
             LED_On(LED_RGB);
@@ -443,7 +438,6 @@ public:
         }
         else
         {
-            config_clear();
             WLAN_DHCP = 0;
             SPARK_LED_FADE = 0;
             if (WLAN_LISTEN_ON_FAILED_CONNECT)
@@ -458,13 +452,8 @@ public:
         WLAN_CAN_SHUTDOWN = 1;
     }
 
-    void notify_cannot_shutdown()
-    {
-        WLAN_CAN_SHUTDOWN = 0;
-    }
 
-
-    void listen_loop() override
+    void listen_loop()
     {
         if (WLAN_SMART_CONFIG_START)
         {
@@ -483,39 +472,14 @@ public:
         }
     }
 
-    inline bool hasDHCP()
+    void update_config() override
     {
-    		return WLAN_DHCP && !SPARK_WLAN_SLEEP;
-    }
-
-};
-
-extern ManagedNetworkInterface& network;
-
-template <typename Config, typename C>
-class ManagedIPNetworkInterface : public ManagedNetworkInterface
-{
-	Config ip_config;
-
-public:
-
-    void get_ipconfig(IPConfig* config) override
-    {
-    		update_config(true);
-    		memcpy(config, this->config(), config->size);
-    }
-
-    void update_config(bool force=false) override
-    {
-    		// todo - IPv6 may not set this field.
         bool fetched_config = ip_config.nw.aucIP.ipv4!=0;
-        if (hasDHCP() || force)
+        if (WLAN_DHCP && !SPARK_WLAN_SLEEP)
         {
-            if (!fetched_config || force)
+            if (!fetched_config)
             {
-            		memset(&ip_config, 0, sizeof(ip_config));
-            		ip_config.size = sizeof(ip_config);
-            		reinterpret_cast<C*>(this)->fetch_ipconfig(&ip_config);
+                fetch_ipconfig(&ip_config);
             }
         }
         else if (fetched_config)
@@ -532,6 +496,9 @@ public:
     void* config() override  { return &ip_config; }
 
 };
+
+extern ManagedNetworkInterface& network;
+
 
 
 

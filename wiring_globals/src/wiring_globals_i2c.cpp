@@ -8,29 +8,15 @@
 
 #ifndef SPARK_WIRING_NO_I2C
 
-TwoWire& __fetch_global_Wire()
-{
-	static TwoWire wire(HAL_I2C_INTERFACE1);
-	return wire;
-}
+TwoWire Wire(HAL_I2C_INTERFACE1);
 
 #if Wiring_Wire1
-TwoWire& __fetch_global_Wire1()
-{
-	static TwoWire wire(HAL_I2C_INTERFACE2);
-	return wire;
-}
-
+TwoWire Wire1(HAL_I2C_INTERFACE2);
 #endif
 
 /* System PMIC and Fuel Guage I2C3 */
 #if Wiring_Wire3
-TwoWire& __fetch_global_Wire3()
-{
-	static TwoWire wire(HAL_I2C_INTERFACE3);
-	return wire;
-}
-
+TwoWire Wire3(HAL_I2C_INTERFACE3);
 #endif
 
 #endif //SPARK_WIRING_NO_I2C

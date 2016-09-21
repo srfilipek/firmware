@@ -35,13 +35,6 @@
 #ifndef __SOCKET_H__
 #define __SOCKET_H__
 
-// exclude timeval definition on linux
-#define _SYS__TIMEVAL_H_
-// exclude system select
-#define _SYS_SELECT_H
-
-
-
 #include "data_types.h"
 #include "time.h"
 

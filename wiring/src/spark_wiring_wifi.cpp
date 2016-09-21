@@ -34,11 +34,16 @@ License along with this library; if not, see <http://www.gnu.org/licenses/>.
 
 namespace spark {
 
-    class APArrayPopulator
+    class ScanArray
     {
         WiFiAccessPoint* results;
-
+        int count;
         int index;
+
+        static void scan_callback(WiFiAccessPoint* result, void* cookie)
+        {
+            ((ScanArray*)cookie)->addResult(result);
+        }
 
         void addResult(WiFiAccessPoint* result) {
             if (index<count) {
@@ -46,51 +51,25 @@ namespace spark {
             }
         }
 
-    protected:
-        static void callback(WiFiAccessPoint* result, void* cookie)
-        {
-            ((APArrayPopulator*)cookie)->addResult(result);
-        }
-
-        int count;
     public:
-        APArrayPopulator(WiFiAccessPoint* results, int size) {
+        ScanArray(WiFiAccessPoint* results, int size) {
             this->results = results;
             this->count = size;
             this->index = 0;
         }
-    };
-
-    class APScan : public APArrayPopulator {
-        public:
-        using APArrayPopulator::APArrayPopulator;
 
         int start()
         {
-            return std::min(count, wlan_scan(callback, this));
-        }
-    };
-
-    class APList : public APArrayPopulator {
-        public:
-        using APArrayPopulator::APArrayPopulator;
-
-        int start()
-        {
-            return std::min(count, wlan_get_credentials(callback, this));
+            return wlan_scan(scan_callback, this);
         }
     };
 
 
     int WiFiClass::scan(WiFiAccessPoint* results, size_t result_count) {
-        APScan apScan(results, result_count);
-        return apScan.start();
+        ScanArray scanArray(results, result_count);
+        return scanArray.start();
     }
 
-    int WiFiClass::getCredentials(WiFiAccessPoint* results, size_t result_count) {
-        APList apList(results, result_count);
-        return apList.start();
-    }
 
     int8_t WiFiClass::RSSI() {
         if (!network_ready(*this, 0, NULL))

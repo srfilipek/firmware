@@ -9,18 +9,6 @@
 #define scheduler(b)
 #endif
 
-class DelayTest
-{
-    public:
-
-    DelayTest(uint16_t duration)
-    {
-        HAL_Delay_Milliseconds(duration);
-    }
-};
-
-DelayTest dt(10);
-
 test(delay_1_is_within_5_percent)
 {
     // on RTOS have to stop task scheduling for the delays or we may not

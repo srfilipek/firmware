@@ -85,16 +85,14 @@ public:
  */
 #ifndef SPARK_WIRING_NO_I2C
 
-#define Wire __fetch_global_Wire()
-TwoWire& __fetch_global_Wire();
+extern TwoWire Wire;
 
 #if Wiring_Wire1
 #ifdef Wire1
 #undef Wire1
 #endif  // Wire1
 
-#define Wire1 __fetch_global_Wire1()
-TwoWire& __fetch_global_Wire1();
+extern TwoWire Wire1;
 #endif  // Wiring_Wire1
 
 /* System PMIC and Fuel Guage I2C3 */
@@ -103,9 +101,7 @@ TwoWire& __fetch_global_Wire1();
 #undef Wire3
 #endif  // Wire3
 
-#define Wire3 __fetch_global_Wire3()
-TwoWire& __fetch_global_Wire3();
-
+extern TwoWire Wire3;
 #endif  // Wiring_Wire3
 
 #endif

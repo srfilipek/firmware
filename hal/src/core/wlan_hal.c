@@ -61,7 +61,7 @@ uint32_t lastEvent = 0;
 #define ERROR_COUNT_FILE_OFFSET		3
 
 
-uint32_t HAL_NET_SetNetWatchDog(uint32_t timeOutInMS)
+uint32_t HAL_WLAN_SetNetWatchDog(uint32_t timeOutInMS)
 {
     uint32_t rv = cc3000__event_timeout_ms;
     cc3000__event_timeout_ms = timeOutInMS;
@@ -112,9 +112,7 @@ wlan_result_t wlan_deactivate() {
 
 bool wlan_reset_credentials_store_required()
 {
-	wlan_start(0);	// needed for nvmem_read
-	bool has_nvmem = nvmem_read(NVMEM_SPARK_FILE_ID, NVMEM_SPARK_FILE_SIZE, 0, NVMEM_Spark_File_Data) == NVMEM_SPARK_FILE_SIZE;
-    return (NVMEM_SPARK_Reset_SysFlag == 0x0001 || !has_nvmem);
+    return (NVMEM_SPARK_Reset_SysFlag == 0x0001 || nvmem_read(NVMEM_SPARK_FILE_ID, NVMEM_SPARK_FILE_SIZE, 0, NVMEM_Spark_File_Data) != NVMEM_SPARK_FILE_SIZE);
 }
 
 wlan_result_t wlan_reset_credentials_store()
@@ -143,7 +141,7 @@ void Set_NetApp_Timeout(void)
     unsigned long aucARP = 3600;
     unsigned long aucKeepalive = 10;
     unsigned long aucInactivity = DEFAULT_SEC_INACTIVITY;
-    HAL_NET_SetNetWatchDog(S2M(DEFAULT_SEC_NETOPS)+ (DEFAULT_SEC_INACTIVITY ? 250 : 0) );
+    HAL_WLAN_SetNetWatchDog(S2M(DEFAULT_SEC_NETOPS)+ (DEFAULT_SEC_INACTIVITY ? 250 : 0) );
     netapp_timeout_values(&aucDHCP, &aucARP, &aucKeepalive, &aucInactivity);
 }
 
@@ -347,19 +345,19 @@ void WLAN_Async_Callback(long lEventType, char *data, unsigned char length)
         break;
 
     case HCI_EVNT_WLAN_UNSOL_CONNECT:
-        HAL_NET_notify_connected();
+        HAL_WLAN_notify_connected();
         break;
 
     case HCI_EVNT_WLAN_UNSOL_DISCONNECT:
-        HAL_NET_notify_disconnected();
+        HAL_WLAN_notify_disconnected();
         break;
 
     case HCI_EVNT_WLAN_UNSOL_DHCP:
-        HAL_NET_notify_dhcp(*(data + 20) == 0);
+        HAL_WLAN_notify_dhcp(*(data + 20) == 0);
         break;
 
     case HCI_EVENT_CC3000_CAN_SHUT_DOWN:
-        HAL_NET_notify_can_shutdown();
+        HAL_WLAN_notify_can_shutdown();
         break;
 
     case HCI_EVNT_WLAN_ASYNC_PING_REPORT:
@@ -372,7 +370,7 @@ void WLAN_Async_Callback(long lEventType, char *data, unsigned char length)
             sock_handle_t socket = -1;
             STREAM_TO_UINT32(data,0,socket);
             set_socket_active_status(socket, SOCKET_STATUS_INACTIVE);
-            HAL_NET_notify_socket_closed(socket);
+            HAL_WLAN_notify_socket_closed(socket);
             break;
         }
     }
@@ -569,11 +567,3 @@ int wlan_scan(wlan_scan_result_t callback, void* cookie)
     return err < 0 ? err : count;
 }
 
-/**
- * Lists all WLAN credentials currently stored on the device
- */
-int wlan_get_credentials(wlan_scan_result_t callback, void* callback_data)
-{
-    // Reading credentials from the CC3000 is not possible
-    return 0;
-}

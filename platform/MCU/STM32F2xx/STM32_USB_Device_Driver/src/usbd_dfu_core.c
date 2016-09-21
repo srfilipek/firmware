@@ -66,7 +66,6 @@
 #include "usbd_desc.h"
 #include "usbd_req.h"
 #include "usb_bsp.h"
-#include "usbd_dfu_mal.h"
 
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
@@ -568,13 +567,7 @@ static uint8_t  EP0_TxSent (void  *pdev)
         Pointer += MAL_Buffer[2] << 8;
         Pointer += MAL_Buffer[3] << 16;
         Pointer += MAL_Buffer[4] << 24;
-        uint16_t status = MAL_Erase(usbd_dfu_AltSet, Pointer);
-        if (status != MAL_OK) {
-          /* Call the error management function (command will be nacked) */
-          req.bmRequest = 0;
-          req.wLength = 1;
-          USBD_CtlError (pdev, &req);
-        }
+        MAL_Erase(Pointer);
       }
       else
       {
@@ -594,13 +587,7 @@ static uint8_t  EP0_TxSent (void  *pdev)
       Addr = ((wBlockNum - 2) * XFERSIZE) + Pointer;
 
       /* Preform the write operation */
-      uint16_t status = MAL_Write(usbd_dfu_AltSet, Addr, wlength);
-      if (status != MAL_OK) {
-        /* Call the error management function (command will be nacked) */
-        req.bmRequest = 0;
-        req.wLength = 1;
-        USBD_CtlError (pdev, &req);
-      }
+      MAL_Write(Addr, wlength);
     }
     /* Reset the global lenght and block number */
     wlength = 0;
@@ -783,7 +770,7 @@ static void DFU_Req_UPLOAD(void *pdev, USB_SETUP_REQ *req)
         Addr = ((wBlockNum - 2) * XFERSIZE) + Pointer;  /* Change is Accelerated*/
 
         /* Return the physical address where data are stored */
-        Phy_Addr = MAL_Read(usbd_dfu_AltSet, Addr, wlength);
+        Phy_Addr = MAL_Read(Addr, wlength);
 
         /* Send the status data over EP0 */
         USBD_CtlSendData (pdev,
@@ -839,11 +826,11 @@ static void DFU_Req_GETSTATUS(void *pdev)
       DeviceStatus[4] = DeviceState;
       if ((wBlockNum == 0) && (MAL_Buffer[0] == CMD_ERASE))
       {
-        MAL_GetStatus(usbd_dfu_AltSet, Pointer, 0, DeviceStatus);
+        MAL_GetStatus(Pointer, 0, DeviceStatus);
       }
       else
       {
-        MAL_GetStatus(usbd_dfu_AltSet, Pointer, 1, DeviceStatus);
+        MAL_GetStatus(Pointer, 1, DeviceStatus);
       }
     }
     else  /* (wlength==0)*/

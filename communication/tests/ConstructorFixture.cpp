@@ -128,7 +128,7 @@ uint8_t ConstructorFixture::sent_buf_0[256];
 uint8_t ConstructorFixture::sent_buf_1[256];
 
 uint8_t ConstructorFixture::message_to_receive[98];
-uint32_t ConstructorFixture::mock_crc = 0;
+long unsigned int ConstructorFixture::mock_crc = 0;
 unsigned short ConstructorFixture::next_chunk_index = 0;
 uint8_t ConstructorFixture::saved_firmware_chunk[72];
 bool ConstructorFixture::did_prepare_for_update = false;
@@ -156,10 +156,10 @@ ConstructorFixture::ConstructorFixture()
   callbacks.millis = mock_millis;
   callbacks.set_time = mock_set_time;
   descriptor.num_functions = mock_num_functions;
-  //descriptor.copy_function_key = mock_copy_function_key;
+  descriptor.copy_function_key = mock_copy_function_key;
   descriptor.call_function = mock_call_function;
   descriptor.num_variables = mock_num_variables;
-  //descriptor.copy_variable_key = mock_copy_variable_key;
+  descriptor.copy_variable_key = mock_copy_variable_key;
   descriptor.get_variable = mock_get_variable;
   descriptor.was_ota_upgrade_successful = mock_ota_status_check;
   descriptor.variable_type = mock_variable_type;
@@ -174,7 +174,7 @@ ConstructorFixture::ConstructorFixture()
   spark_protocol.init(id, keys, callbacks, descriptor);
 }
 
-int ConstructorFixture::mock_send(const unsigned char *buf, uint32_t buflen)
+int ConstructorFixture::mock_send(const unsigned char *buf, int buflen)
 {
   if (0 < buflen)
   {
@@ -216,7 +216,7 @@ int ConstructorFixture::mock_send(const unsigned char *buf, uint32_t buflen)
   return buflen;
 }
 
-int ConstructorFixture::mock_receive(unsigned char *buf, uint32_t buflen)
+int ConstructorFixture::mock_receive(unsigned char *buf, int buflen)
 {
   if (nothing_to_receive)
     return 0;
@@ -273,27 +273,25 @@ int ConstructorFixture::mock_receive(unsigned char *buf, uint32_t buflen)
   return buflen;
 }
 
-int ConstructorFixture::mock_prepare_for_firmware_update(FileTransfer::Descriptor&, uint32_t, void*)
+void ConstructorFixture::mock_prepare_for_firmware_update(void)
 {
   did_prepare_for_update = true;
-  return 0;
 }
 
-uint32_t ConstructorFixture::mock_calculate_crc(const unsigned char *, uint32_t)
+long unsigned int ConstructorFixture::mock_calculate_crc(unsigned char *, long unsigned int)
 {
   return mock_crc;
 }
 
-int ConstructorFixture::mock_save_firmware_chunk(FileTransfer::Descriptor& desc, const unsigned char *buf, void*)
+unsigned short ConstructorFixture::mock_save_firmware_chunk(unsigned char *buf, long unsigned int buflen)
 {
-  memcpy(saved_firmware_chunk, buf, desc.chunk_size);
+  memcpy(saved_firmware_chunk, buf, buflen);
   return next_chunk_index;
 }
 
-int ConstructorFixture::mock_finish_firmware_update(FileTransfer::Descriptor&, uint32_t, void*)
+void ConstructorFixture::mock_finish_firmware_update(void)
 {
   did_finish_update = true;
-  return 0;
 }
 
 int ConstructorFixture::mock_num_functions(void)
@@ -307,16 +305,14 @@ void ConstructorFixture::mock_copy_function_key(char *dst, int i)
   memcpy(dst, funcs[i], SparkProtocol::MAX_FUNCTION_KEY_LENGTH);
 }
 
-int ConstructorFixture::mock_call_function(const char *function_key, const char *arg,
-                                           SparkDescriptor::FunctionResultCallback callback, void*)
+int ConstructorFixture::mock_call_function(const char *function_key,
+                                           const char *arg)
 {
   const char *prevent_warning;
   prevent_warning = function_key;
   prevent_warning = arg;
   function_called = true;
-  int result = 456;
-  callback(&result, SparkReturnType::INT);
-  return 0;
+  return 456;
 }
 
 int ConstructorFixture::mock_num_variables(void)
@@ -330,14 +326,14 @@ void ConstructorFixture::mock_copy_variable_key(char *dst, int i)
   memcpy(dst, vars[i], SparkProtocol::MAX_VARIABLE_KEY_LENGTH);
 }
 
-const void *ConstructorFixture::mock_get_variable(const char *variable_key)
+void *ConstructorFixture::mock_get_variable(const char *variable_key)
 {
   const char *prevent_warning;
   prevent_warning = variable_key;
   return &variable_to_get;
 }
 
-void ConstructorFixture::mock_signal(bool on, unsigned int, void*)
+void ConstructorFixture::mock_signal(bool on)
 {
   signal_called_with = on;
 }
@@ -361,7 +357,7 @@ SparkReturnType::Enum ConstructorFixture::mock_variable_type(const char *variabl
   return SparkReturnType::INT;
 }
 
-void ConstructorFixture::mock_set_time(time_t t, unsigned int, void*)
+void ConstructorFixture::mock_set_time(time_t t)
 {
   set_time_called_with = t;
 }
