@@ -7,7 +7,7 @@ This cloud test app implements some automated end to end tests using a device an
 - [BATS](https://github.com/sstephenson/bats#installing-bats-from-source)
 - Particle CLI 
 - jq - [command line json parser](https://stedolan.github.io/jq/)
- - on OSX `brew install js`
+ - on OSX `brew install jq`
 - this firmware repo checked out in git
 - `gem install retryit`
 
